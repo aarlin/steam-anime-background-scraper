@@ -15,18 +15,32 @@ def pagescraper(searchpage):
                 print("New steam app added to list: " + newApp)
                 steamApps.add(newApp)
 
-def totalpages(searchpage):
+def pagefinder(searchpage):
     html = urlopen(searchpage)
     bsObj = BeautifulSoup(html.read())
-    div = bsObj.find("div", {"class":"search_pagination_right"})
-    print(div)
+    totalpages = int("0")
+    for link in bsObj.find("div", {"class":"search_pagination_right"}).findAll("a"):
+        try:
+            if int(link.text) > totalpages:
+                totalpages = int(link.text)
+        except ValueError:  # IGNORE NON-INTEGER VALUES
+            continue 
+    return totalpages 
 
-
-# <a href="http://store.steampowered.com/appa/ + ^*?  + "
+def allpagescraper(searchpage):
+    totalpages = pagefinder(searchpage)
+    for page in range(1, totalpages + 1):
+        if page == 1:
+            pagescraper(searchpage)
+        else:
+            modifiedsearchpage = searchpage + "&page=" + str(page)
+            pagescraper(modifiedsearchpage)
+         
 
 # need to go through all pages as well
 
 #pagescraper("http://store.steampowered.com/search/?tags=4085&category2=29")
-totalpages("http://store.steampowered.com/search/?tags=4085&category2=29")
+#totalpages("http://store.steampowered.com/search/?tags=4085&category2=29")
+allpagescraper("http://store.steampowered.com/search/?tags=4085&category2=29")
 
 #<div class="search_pagination_right">
