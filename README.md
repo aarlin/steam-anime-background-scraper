@@ -6,4 +6,6 @@ Selenium
 Scrapy  
 BeautifulSoup
 
-Chose BeautifulSoup because of documentation
+Chose BeautifulSoup because of documentation  
+
+Save all data scraped into a json file, save for MySQL import and save for MongoDB import 
