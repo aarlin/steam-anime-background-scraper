@@ -3,6 +3,7 @@
 import re
 from urllib import urlopen
 from bs4 import BeautifulSoup
+from selenium import webdriver
 
 steamApps = set()
 def pagescraper(searchpage):
@@ -45,22 +46,25 @@ def allpagescraper(searchpage):
 
 def backgroundscraper(searchpage):
     ''' Takes a background community item page and returns the large size and full size image '''
-    html = urlopen(searchpage)
-    bsObj = BeautifulSoup(html.read())
 
-    print searchpage
+    driver = webdriver.PhantomJS()
+    driver.get(searchpage)
 
-    # encounter problem with finding full size HERE
+    html = driver.page_source
+    bsObj = BeautifulSoup(html)
+    
+    # not loaded on initial html.read(), rather it is done by javascript
 
-    div = bsObj.find("div", {"class" : "item_actions"})
-    for link in div.findAll("a", {"class" : ["btn_small", "btn_grey_white_innerfade"]}):
-        print "HELLO"
-        print(link['href'])
+    largeimage = [div.img['src'] for div in bsObj.findAll("div", {"class" : "market_listing_largeimage"}) if div.img]
+    print largeimage
 
-    #<a class="btn_small btn_grey_white_innerfade"     
+    fullsizeimage = [div.a['href'] for div in bsObj.findAll("div", {"class" : "item_actions"}) if div.a]
+    print fullsizeimage
+
+     
 
 def marketitemscraper(steamapp):
-    ''' Takes a steam app id and '''
+    ''' Takes a steam app id and scrapes the community market for all related items'''
     searchpage = "http://steamcommunity.com/market/search?appid=753&category_753_Game%5B%5D=tag_app_" + str(steamapp)
     html = urlopen(searchpage)         
     bsObj = BeautifulSoup(html.read())
@@ -84,6 +88,8 @@ def marketitemscraper(steamapp):
             backgroundscraper(link['href'])
         else:
             print("There was an error with this item type: " + itemtype)
+
+# EXAMPLE FUNCTION USAGE
 
 #pagescraper("http://store.steampowered.com/search/?tags=4085&category2=29")
 #totalpages("http://store.steampowered.com/search/?tags=4085&category2=29")
