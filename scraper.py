@@ -34,13 +34,35 @@ def allpagescraper(searchpage):
             pagescraper(searchpage)
         else:
             modifiedsearchpage = searchpage + "&page=" + str(page)
-            pagescraper(modifiedsearchpage)
-         
+            pagescraper(modifiedsearchpage)"
 
-# need to go through all pages as well
+def backgroundscraper(searchpage):
+    html = urlopen(searchpage)
+    bsObj = BeautifulSoup(html.read())
+
+    link = bsObj.find("a", href = re.compile("^(http://cdn.akamai.steamstatic.com/steamcommunity/public/images/items/.*)$"))
+    fullsizeimg = link.attrs['href']
+
+    return fullsizeimg
+
+def marketitemscraper(steamapp):
+    searchpage = "http://steamcommunity.com/market/search?appid=753&category_753_Game%5B%5D=tag_app_" + steamapp
+    html = urlopen(searchpage)         
+    bsObj = BeautifulSoup(html.read())
+
+    for link in bsObj.findAll("a", href = re.compile("^(https://steamcommunity.com/market/listings/753/.*)$")):
+        price = link.find("span", {"class": "normal_price"}).text
+        itemname = link.find("span", {"class": "market_listing_item_name"}).text
+        itemtype = link.find("span", {"class": "market_listing_game_name"}).text
+        if 'Trading Card' in itemtype:
+            # FOR FUTURE USE
+        elif 'Emoticon' in itemtype:
+            # FOR FUTURE USE
+        elif 'Profile Background' in itemtype:
+            print(backgroundscraper(link.attrs['href']))
+        else: 
+            print("There was an error with this item type:" + itemtype)
 
 #pagescraper("http://store.steampowered.com/search/?tags=4085&category2=29")
 #totalpages("http://store.steampowered.com/search/?tags=4085&category2=29")
 allpagescraper("http://store.steampowered.com/search/?tags=4085&category2=29")
-
-#<div class="search_pagination_right">

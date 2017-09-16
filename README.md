@@ -1,4 +1,4 @@
-# steam-anime-background
+# steam-anime-background-scraper
 Python web scraper for steam anime backgrounds
 
 Options to choose from:  
