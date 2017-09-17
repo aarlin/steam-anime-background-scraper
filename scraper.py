@@ -44,6 +44,19 @@ def allpagescraper(searchpage):
             modifiedsearchpage = searchpage + "&page=" + str(page)
             pagescraper(modifiedsearchpage)
 
+def pagefindermarketscraper(searchpage):
+    
+    driver = webdriver.PhantomJS()
+    driver.get(searchpage)
+
+    html = driver.page_source
+    bsObj = BeautifulSoup(html)
+
+    span = bsObj.find("span", id = "searchResults_links")
+    page = span.findAll("span")[-1].text
+
+    return page
+         
 def backgroundscraper(searchpage):
     ''' Takes a background community item page and returns the large size and full size image '''
 
@@ -56,16 +69,12 @@ def backgroundscraper(searchpage):
     # not loaded on initial html.read(), rather it is done by javascript
 
     largeimage = [div.img['src'] for div in bsObj.findAll("div", {"class" : "market_listing_largeimage"}) if div.img]
-    print largeimage
-
     fullsizeimage = [div.a['href'] for div in bsObj.findAll("div", {"class" : "item_actions"}) if div.a]
-    print fullsizeimage
 
-     
+    return largeimage, fullsizeimage
 
-def marketitemscraper(steamapp):
-    ''' Takes a steam app id and scrapes the community market for all related items'''
-    searchpage = "http://steamcommunity.com/market/search?appid=753&category_753_Game%5B%5D=tag_app_" + str(steamapp)
+def marketitemscraper(searchpage):
+    ''' Takes a steam app id and scrapes the community market page for all related items shown on page'''
     html = urlopen(searchpage)         
     bsObj = BeautifulSoup(html.read())
 
@@ -76,23 +85,46 @@ def marketitemscraper(steamapp):
 
         if 'Trading Card' in itemtype:
             # FOR FUTURE USE
-            print(itemtype)
+            pass
         elif 'Emoticon' in itemtype:
             # FOR FUTURE USE
-            print(itemtype)
+            pass
         elif 'Booster Pack' in itemtype:
             # FOR FUTURE USE
-            print(itemtype)
+            pass
         elif 'Profile Background' in itemtype:
-            print(itemtype)
-            backgroundscraper(link['href'])
+            largeimage, fullsizeimage = backgroundscraper(link['href'])
         else:
             print("There was an error with this item type: " + itemtype)
+
+def fullmarketitemscraper(steamapp):
+    totalpages = pagefindermarketscraper("http://steamcommunity.com/market/search?appid=753&category_753_Game%5B%5D=tag_app_" + str(steamapp))
+    marketpage = "http://steamcommunity.com/market/search?appid=753&category_753_Game%5B%5D=tag_app_" + str(steamapp)
+
+    for page in range(1, int(totalpages) + 1):
+        if page == 1:
+            marketitemscraper(marketpage)
+        else:
+            seperator = "#p"
+            marketpage = marketpage.split(seperator, 1)[0]
+            marketpage += "#p" + str(page) + "_popular_desc"
+            marketitemscraper(marketpage)
 
 # EXAMPLE FUNCTION USAGE
 
 #pagescraper("http://store.steampowered.com/search/?tags=4085&category2=29")
 #totalpages("http://store.steampowered.com/search/?tags=4085&category2=29")
 #allpagescraper("http://store.steampowered.com/search/?tags=4085&category2=29")
-marketitemscraper(415480)
+#marketitemscraper("http://steamcommunity.com/market/search?appid=753&category_753_Game%5B%5D=tag_app_415480")
+#pagefindermarketscraper("http://steamcommunity.com/market/search?appid=753&category_753_Game%5B%5D=tag_app_415480")
+#pagefindermarketscraper("http://steamcommunity.com/market/search?")
+fullmarketitemscraper(415480)
 
+# SO WE HAVE SCRAPER FOR ALL ANIME GAMES
+# THAT GIVES US STEAM APP ID FOR THOSE GAMES
+# WE USE THOSE APP ID TO OBTAIN BACKGROUND IMG.
+
+# NEED TO WORK ON ADDING EXCEPTIONS TO APP ID
+# NEED TO WORK ON CONVERTING DATA INTO READABLE FORMAT, JSON
+# RARITY OF ITEM TYPE? UNCOMMON, RARE, COMMON?
+# FIX UP DEFINITIONS
