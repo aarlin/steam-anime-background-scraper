@@ -106,15 +106,15 @@ def marketitemscraper(searchpage):
             # FOR FUTURE USE
             pass
         elif 'Profile Background' in itemtype:
-            largeimage, fullsizeimage = imagescraper(link['href']) 
+            largeimage, fullsizeimage = imagescraper(link['href'])     
 
             background_data = {}
             background_data['name'] = itemname
             background_data['price'] = price
             background_data['type'] = itemtype
-            background_data['largeimg'] = largeimage
-            background_data['fullsizeimg'] = fullsizeimage
-            background_data['market_hash_name'] = link['href'].split('/')[-1]
+            background_data['largeimg'] = largeimage[0]
+            background_data['fullsizeimg'] = fullsizeimage[0]
+            background_data['market_hash_name'] = link['href'].split('/')[-1].split('?filter=')[0]
 
             data['background'].append(background_data)
 
@@ -153,7 +153,7 @@ def backgroundscraper(steamapp):
         if page == 1:
             marketdata = marketitemscraper(marketpage)
             data['background'].append(marketdata['background'])
-            print("Finished scraping page 1")
+            print("Finished scraping page 1 of backgrounds")
         else:
             separator = "#p"
             marketpage = marketpage.split(separator, 1)[0]
@@ -161,7 +161,7 @@ def backgroundscraper(steamapp):
 
             marketdata = marketitemscraper(marketpage)
             data['background'].append(marketdata['background'])
-            print("Finished scraping page " + str(page))
+            print("Finished scraping page " + str(page) + " of backgrounds")
 
     return data
 
@@ -175,7 +175,7 @@ def tradingcardscraper(steamapp):
         if page == 1:
             marketdata = marketitemscraper(marketpage)
             data['trading_card'].append(marketdata['trading_card'])
-            print("Finished scraping page 1")
+            print("Finished scraping page 1 of trading cards")
         else:
             separator = "#p"
             marketpage = marketpage.split(separator, 1)[0]
@@ -183,7 +183,7 @@ def tradingcardscraper(steamapp):
 
             marketdata = marketitemscraper(marketpage)
             data['trading_card'].append(marketdata['trading_card'])
-            print("Finished scraping page " + str(page)) 
+            print("Finished scraping page " + str(page) + " of trading cards") 
 
     return data
 
@@ -197,7 +197,7 @@ def emoticonscraper(steamapp):
         if page == 1:
             marketdata = marketitemscraper(marketpage)
             data['emoticon'].append(marketdata['emoticon'])
-            print("Finished scraping page 1")
+            print("Finished scraping page 1 of emoticons")
         else:
             separator = "#p"
             marketpage = marketpage.split(separator, 1)[0]
@@ -205,19 +205,20 @@ def emoticonscraper(steamapp):
 
             marketdata = marketitemscraper(marketpage)
             data['emoticon'].append(marketdata['emoticon'])
-            print("Finished scraping page " + str(page))   
+            print("Finished scraping page " + str(page) + " of emoticons")   
 
     return data
 
 def marketscraper(appid):
+    print("Running scraper on steam app id: " + str(appid))
     appids = {}
-    appids[appid] = []
+    appids[appid] = {}
     backgrounds = backgroundscraper(appid)
     tradingcards = tradingcardscraper(appid)
     emoticons = emoticonscraper(appid)
-    appids[appid].append(backgrounds)
-    appids[appid].append(tradingcards)
-    appids[appid].append(emoticons)
+    appids[appid].update(backgrounds)
+    appids[appid].update(tradingcards)
+    appids[appid].update(emoticons)
 
     with open('animegames.json', 'w') as output:
         json.dump(appids, output)
