@@ -55,11 +55,17 @@ def pagefindermarketscraper(searchpage):
     bsObj = BeautifulSoup(html)
 
     span = bsObj.find("span", id = "searchResults_links")
-    page = span.findAll("span")[-1].text
+    page = 1
+    try:
+        page = span.findAll("span")[-1].text
+    except IndexError:
+        pass
+    except AttributeError:
+        pass
 
     return page
          
-def backgroundscraper(searchpage):
+def imagescraper(searchpage):
     ''' Takes a background community item page and returns the large size and full size image '''
 
     driver = webdriver.PhantomJS()
@@ -82,6 +88,8 @@ def marketitemscraper(searchpage):
 
     data = {}
     data['background'] = []
+    data['trading_card'] = []
+    data['emoticon'] = []
 
     for link in bsObj.findAll("a", {"class": "market_listing_row_link"}):
         price = link.findAll("span", {"class": "normal_price"})[-1].text
@@ -98,7 +106,7 @@ def marketitemscraper(searchpage):
             # FOR FUTURE USE
             pass
         elif 'Profile Background' in itemtype:
-            largeimage, fullsizeimage = backgroundscraper(link['href']) 
+            largeimage, fullsizeimage = imagescraper(link['href']) 
 
             background_data = {}
             background_data['name'] = itemname
@@ -106,6 +114,7 @@ def marketitemscraper(searchpage):
             background_data['type'] = itemtype
             background_data['largeimg'] = largeimage
             background_data['fullsizeimg'] = fullsizeimage
+            background_data['market_hash_name'] = link['href'].split('/')[-1]
 
             data['background'].append(background_data)
 
@@ -114,28 +123,105 @@ def marketitemscraper(searchpage):
 
     return data
 
-def fullmarketitemscraper(steamapp):
-    ''' Grabs all items from a specific steam app id from all pages of steam app's market '''
-    totalpages = pagefindermarketscraper("http://steamcommunity.com/market/search?appid=753&category_753_Game%5B%5D=tag_app_" + str(steamapp))
-    marketpage = "http://steamcommunity.com/market/search?appid=753&category_753_Game%5B%5D=tag_app_" + str(steamapp)
+# def fullmarketitemscraper(searchpage):
+#     ''' Grabs all items from a specific steam app id from all pages of steam app's market '''
+#     totalpages = pagefindermarketscraper(searchpage)
 
-    appids = {}
-    appids[steamapp] = []
+#     data = {}
+
+#     for page in range(1, int(totalpages) + 1):
+#         if page == 1:
+#             marketdata = marketitemscraper(searchpage)
+#             data['background'].append(marketdata['background'])
+#             print("Finished scraping page 1")
+#         else:
+#             separator = "#p"
+#             marketpage = searchpage.split(separator, 1)[0]
+#             marketpage += "#p" + str(page) + "_popular_desc"
+
+#             marketdata = marketitemscraper(marketpage)
+#             data['background'].append(marketdata['background'])
+#             print("Finished scraping page " + str(page))
+
+def backgroundscraper(steamapp):
+    marketpage = "http://steamcommunity.com/market/search?appid=753&category_753_Game%5B%5D=tag_app_" + str(steamapp) + "&q=background"
+    totalpages = pagefindermarketscraper(marketpage)
+    data = {}
+    data['background'] = []
 
     for page in range(1, int(totalpages) + 1):
         if page == 1:
-            data = marketitemscraper(marketpage)
-            appids[steamapp].append(data)
+            marketdata = marketitemscraper(marketpage)
+            data['background'].append(marketdata['background'])
+            print("Finished scraping page 1")
         else:
             separator = "#p"
             marketpage = marketpage.split(separator, 1)[0]
             marketpage += "#p" + str(page) + "_popular_desc"
 
-            data = marketitemscraper(marketpage)
-            appids[steamapp].append(data)
+            marketdata = marketitemscraper(marketpage)
+            data['background'].append(marketdata['background'])
+            print("Finished scraping page " + str(page))
+
+    return data
+
+def tradingcardscraper(steamapp):
+    marketpage = "http://steamcommunity.com/market/search?appid=753&category_753_Game%5B%5D=tag_app_" + str(steamapp) + "&q=trading+card"
+    totalpages = pagefindermarketscraper(marketpage)
+    data = {}
+    data['trading_card'] = []   
+
+    for page in range(1, int(totalpages) + 1):
+        if page == 1:
+            marketdata = marketitemscraper(marketpage)
+            data['trading_card'].append(marketdata['trading_card'])
+            print("Finished scraping page 1")
+        else:
+            separator = "#p"
+            marketpage = marketpage.split(separator, 1)[0]
+            marketpage += "#p" + str(page) + "_popular_desc"
+
+            marketdata = marketitemscraper(marketpage)
+            data['trading_card'].append(marketdata['trading_card'])
+            print("Finished scraping page " + str(page)) 
+
+    return data
+
+def emoticonscraper(steamapp):
+    marketpage = "http://steamcommunity.com/market/search?appid=753&category_753_Game%5B%5D=tag_app_" + str(steamapp) + "&q=emoticon"
+    totalpages = pagefindermarketscraper(marketpage)
+    data = {}
+    data['emoticon'] = []  
+
+    for page in range(1, int(totalpages) + 1):
+        if page == 1:
+            marketdata = marketitemscraper(marketpage)
+            data['emoticon'].append(marketdata['emoticon'])
+            print("Finished scraping page 1")
+        else:
+            separator = "#p"
+            marketpage = marketpage.split(separator, 1)[0]
+            marketpage += "#p" + str(page) + "_popular_desc"
+
+            marketdata = marketitemscraper(marketpage)
+            data['emoticon'].append(marketdata['emoticon'])
+            print("Finished scraping page " + str(page))   
+
+    return data
+
+def marketscraper(appid):
+    appids = {}
+    appids[appid] = []
+    backgrounds = backgroundscraper(appid)
+    tradingcards = tradingcardscraper(appid)
+    emoticons = emoticonscraper(appid)
+    appids[appid].append(backgrounds)
+    appids[appid].append(tradingcards)
+    appids[appid].append(emoticons)
 
     with open('animegames.json', 'w') as output:
         json.dump(appids, output)
+
 
 # EXAMPLE FUNCTION USAGE
 
@@ -145,7 +231,7 @@ def fullmarketitemscraper(steamapp):
 #marketitemscraper("http://steamcommunity.com/market/search?appid=753&category_753_Game%5B%5D=tag_app_415480")
 #pagefindermarketscraper("http://steamcommunity.com/market/search?appid=753&category_753_Game%5B%5D=tag_app_415480")
 #pagefindermarketscraper("http://steamcommunity.com/market/search?")
-fullmarketitemscraper(415480)
+marketscraper(415480)
 
 # SO WE HAVE SCRAPER FOR ALL ANIME GAMES
 # THAT GIVES US STEAM APP ID FOR THOSE GAMES
@@ -155,3 +241,7 @@ fullmarketitemscraper(415480)
 # NEED TO WORK ON CONVERTING DATA INTO READABLE FORMAT, JSON
 # RARITY OF ITEM TYPE? UNCOMMON, RARE, COMMON?
 # FIX UP DEFINITIONS
+
+
+# MAKE SEPARATE FUNCTIONS FOR BACKGROUND, CARD, EMOTICONS??
+# TRYING TO GRAB EVERYTHING AT ONCE IS TROUBLESOME ATM 
