@@ -7,19 +7,23 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 
 
-steamApps = set()
+
 def pagescraper(searchpage):
     ''' Takes a steam store search url and 
     scrapes all the game store page url '''
+
+    steamApps = set()
 
     html = urlopen(searchpage)
     bsObj = BeautifulSoup(html.read())
     for link in bsObj.findAll("a", href = re.compile("^(http://store.steampowered.com/app/.*)$")):
         if 'href' in link.attrs:
             if link.attrs['href'] not in steamApps:
-                newApp = link.attrs['href']
+                newApp = link.attrs['href'].split('/')[4]
                 print("New steam app added to list: " + newApp)
                 steamApps.add(newApp)
+
+    return steamApps
 
 def pagefinder(searchpage):
     ''' Takes a steam store search page url and 
@@ -86,6 +90,10 @@ def marketitemscraper(searchpage):
     html = urlopen(searchpage)         
     bsObj = BeautifulSoup(html.read())
 
+    if bsObj.find("div", {"class" : "error_ctn"}):
+        print("You've made too many requests recently. Please wait and try your request again later.")
+        quit()
+
     data = {}
     data['background'] = []
     data['trading_card'] = []
@@ -116,7 +124,7 @@ def marketitemscraper(searchpage):
             background_data['fullsizeimg'] = fullsizeimage[0]
             background_data['market_hash_name'] = link['href'].split('/')[-1].split('?filter=')[0]
 
-            data['background'].append(background_data)
+            data['background'].update(background_data)
 
         else:
             print("There was an error with this item type: " + itemtype)
@@ -220,8 +228,42 @@ def marketscraper(appid):
     appids[appid].update(tradingcards)
     appids[appid].update(emoticons)
 
-    with open('animegames.json', 'w') as output:
+    with open('animegames.json', 'a') as output:
         json.dump(appids, output)
+
+def allgamemarketscraper(appids):
+    print ("OK")
+
+def animeBackgroundsScraper():
+    ''' Rather than use steam store for their tag for anime games, 
+    Anime Backgrounds steam group already has one compiled since 2014 '''
+
+    appids = {}
+
+    html = urlopen('https://animebackgrounds.co/database/')
+    bsObj = BeautifulSoup(html.read())
+
+    for anchor in bsObj.findAll("a", href = re.compile("^(http://www.steamcardexchange.net/.*)$")):
+        if 'href' in anchor.attrs:
+            appid = (anchor.attrs['href']).split('-appid-')[-1] # GRAB THE APPID
+            if appid not in appids:
+                appids[appid] = anchor.text # PLACEHOLDER, WILL BE FIXED
+
+    # GRAB THE NAME OF THE APP ID FROM STEAM API
+    # GRABBING FROM THIS SITE IS UNRELIABLE BECAUSE OF ENCODING ISSUES
+
+    for keys in appids:
+        url = "http://store.steampowered.com/apidetails/?appids=" + appid
+        response = urlopen(url)
+        responseJson = json.loads(response.read())
+        print responseJson.get("data")
+        
+
+
+    for key, value in appids.items():
+        print("Key", key, 'points to', value)
+
+    print len(appids.keys())
 
 
 # EXAMPLE FUNCTION USAGE
@@ -232,7 +274,8 @@ def marketscraper(appid):
 #marketitemscraper("http://steamcommunity.com/market/search?appid=753&category_753_Game%5B%5D=tag_app_415480")
 #pagefindermarketscraper("http://steamcommunity.com/market/search?appid=753&category_753_Game%5B%5D=tag_app_415480")
 #pagefindermarketscraper("http://steamcommunity.com/market/search?")
-marketscraper(415480)
+#marketscraper(415480)
+animeBackgroundsScraper()
 
 # SO WE HAVE SCRAPER FOR ALL ANIME GAMES
 # THAT GIVES US STEAM APP ID FOR THOSE GAMES
