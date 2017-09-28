@@ -2,53 +2,55 @@
 
 import re
 import json
+import requests
+import urllib2
 from urllib import urlopen
 from bs4 import BeautifulSoup
 from selenium import webdriver
 
 
 
-def pagescraper(searchpage):
-    ''' Takes a steam store search url and 
-    scrapes all the game store page url '''
+# def pagescraper(searchpage):
+#     ''' Takes a steam store search url and 
+#     scrapes all the game store page url '''
 
-    steamApps = set()
+#     steamApps = set()
 
-    html = urlopen(searchpage)
-    bsObj = BeautifulSoup(html.read())
-    for link in bsObj.findAll("a", href = re.compile("^(http://store.steampowered.com/app/.*)$")):
-        if 'href' in link.attrs:
-            if link.attrs['href'] not in steamApps:
-                newApp = link.attrs['href'].split('/')[4]
-                print("New steam app added to list: " + newApp)
-                steamApps.add(newApp)
+#     html = urlopen(searchpage)
+#     bsObj = BeautifulSoup(html.read())
+#     for link in bsObj.findAll("a", href = re.compile("^(http://store.steampowered.com/app/.*)$")):
+#         if 'href' in link.attrs:
+#             if link.attrs['href'] not in steamApps:
+#                 newApp = link.attrs['href'].split('/')[4]
+#                 print("New steam app added to list: " + newApp)
+#                 steamApps.add(newApp)
 
-    return steamApps
+#     return steamApps
 
-def pagefinder(searchpage):
-    ''' Takes a steam store search page url and 
-    returns the number to the last page of the search '''
-    html = urlopen(searchpage)
-    bsObj = BeautifulSoup(html.read())
-    totalpages = int("0")
-    for link in bsObj.find("div", {"class":"search_pagination_right"}).findAll("a"):
-        try:
-            if int(link.text) > totalpages:
-                totalpages = int(link.text)
-        except ValueError:  # IGNORE NON-INTEGER VALUES
-            continue 
-    return totalpages 
+# def pagefinder(searchpage):
+#     ''' Takes a steam store search page url and 
+#     returns the number to the last page of the search '''
+#     html = urlopen(searchpage)
+#     bsObj = BeautifulSoup(html.read())
+#     totalpages = int("0")
+#     for link in bsObj.find("div", {"class":"search_pagination_right"}).findAll("a"):
+#         try:
+#             if int(link.text) > totalpages:
+#                 totalpages = int(link.text)
+#         except ValueError:  # IGNORE NON-INTEGER VALUES
+#             continue 
+#     return totalpages 
 
-def allpagescraper(searchpage):
-    ''' Uses both pagescraper and pagefinder functions and 
-    scrapes all pages for all game store url '''
-    totalpages = pagefinder(searchpage)
-    for page in range(1, totalpages + 1):
-        if page == 1:
-            pagescraper(searchpage)
-        else:
-            modifiedsearchpage = searchpage + "&page=" + str(page)
-            pagescraper(modifiedsearchpage)
+# def allpagescraper(searchpage):
+#     ''' Uses both pagescraper and pagefinder functions and 
+#     scrapes all pages for all game store url '''
+#     totalpages = pagefinder(searchpage)
+#     for page in range(1, totalpages + 1):
+#         if page == 1:
+#             pagescraper(searchpage)
+#         else:
+#             modifiedsearchpage = searchpage + "&page=" + str(page)
+#             pagescraper(modifiedsearchpage)
 
 def pagefindermarketscraper(searchpage):
     
@@ -238,7 +240,7 @@ def animeBackgroundsScraper():
     ''' Rather than use steam store for their tag for anime games, 
     Anime Backgrounds steam group already has one compiled since 2014 '''
 
-    appids = {}
+    applist = {}
 
     html = urlopen('https://animebackgrounds.co/database/')
     bsObj = BeautifulSoup(html.read())
@@ -246,24 +248,33 @@ def animeBackgroundsScraper():
     for anchor in bsObj.findAll("a", href = re.compile("^(http://www.steamcardexchange.net/.*)$")):
         if 'href' in anchor.attrs:
             appid = (anchor.attrs['href']).split('-appid-')[-1] # GRAB THE APPID
-            if appid not in appids:
-                appids[appid] = anchor.text # PLACEHOLDER, WILL BE FIXED
+            if appid not in applist:
+                applist[appid] = anchor.text # PLACEHOLDER, WILL BE FIXED
 
     # GRAB THE NAME OF THE APP ID FROM STEAM API
     # GRABBING FROM THIS SITE IS UNRELIABLE BECAUSE OF ENCODING ISSUES
 
-    for keys in appids:
-        url = "http://store.steampowered.com/apidetails/?appids=" + appid
-        response = urlopen(url)
-        responseJson = json.loads(response.read())
-        print responseJson.get("data")
+    steamapi = 'http://api.steampowered.com/ISteamApps/GetAppList/v0001/'
+    driver = webdriver.PhantomJS()
+    driver.get(steamapi)
+
+    soup = BeautifulSoup(driver.page_source)
+    steamlist = json.loads(soup.find("body").text)
+    print steamlist
+
+    #for key in applist:
+        
+    
+
+
+
         
 
 
-    for key, value in appids.items():
-        print("Key", key, 'points to', value)
+    #for key, value in applist.items():
+    #    print("Key", key, 'points to', value)
 
-    print len(appids.keys())
+    #print len(applist.keys())
 
 
 # EXAMPLE FUNCTION USAGE
@@ -289,3 +300,6 @@ animeBackgroundsScraper()
 
 # MAKE SEPARATE FUNCTIONS FOR BACKGROUND, CARD, EMOTICONS??
 # TRYING TO GRAB EVERYTHING AT ONCE IS TROUBLESOME ATM 
+
+
+# BUILD JSON WITH STEAM APP ID, NAME, BACKGROUND MARKET HASH NAME, NAME, 
